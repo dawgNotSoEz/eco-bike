@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "extends": ["universe/native", "plugin:react/recommended"],
+  "rules": {
+    "import/no-named-as-default": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "prettier/prettier": "off",
+    "import/order": "off"
+  }
+}
