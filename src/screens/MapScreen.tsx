@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from "react-native";
+import MapView, { Marker, Circle } from "react-native-maps";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { bikes } from "../data/bikes";
 
@@ -11,8 +11,34 @@ export const MapScreen: React.FC = () => {
   // SGT University exact center
   const SGT_CENTER = { latitude: 28.48314554739756, longitude: 76.90677133818537 };
   const [mapType, setMapType] = React.useState<"standard" | "satellite">("standard");
+  const mapRef = useRef<MapView | null>(null);
+
+  const windowHeight = Dimensions.get('window').height;
+  const mapHeight = Math.round(windowHeight * 0.44); // make map larger and responsive
+
+  // closer zoom for campus view
+  const CAMPUS_DELTA = { latitudeDelta: 0.0035, longitudeDelta: 0.0035 };
+  const DEFAULT_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
   const availableBikes = bikes.filter(bike => bike.status === "available");
+
+  useEffect(() => {
+    // animate map when user toggles between tabs
+    if (!mapRef.current) return;
+    if (selectedTab === 'campus') {
+      mapRef.current.animateToRegion({
+        latitude: SGT_CENTER.latitude,
+        longitude: SGT_CENTER.longitude,
+        ...CAMPUS_DELTA,
+      }, 500);
+    } else {
+      mapRef.current.animateToRegion({
+        latitude: SGT_CENTER.latitude,
+        longitude: SGT_CENTER.longitude,
+        ...DEFAULT_DELTA,
+      }, 500);
+    }
+  }, [selectedTab]);
 
   return (
     <View style={styles.container}>
@@ -59,19 +85,28 @@ export const MapScreen: React.FC = () => {
       </View>
 
       {/* Map */}
-      <View style={styles.mapContainer}>
+      <View style={[styles.mapContainer, { height: mapHeight }]}> 
         <MapView
+          ref={ref => { mapRef.current = ref; }}
           style={styles.map}
           mapType={mapType}
           initialRegion={{
             latitude: SGT_CENTER.latitude,
             longitude: SGT_CENTER.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
+            latitudeDelta: DEFAULT_DELTA.latitudeDelta,
+            longitudeDelta: DEFAULT_DELTA.longitudeDelta,
           }}
         >
-      {/* Center pin for SGT University */}
-      <Marker coordinate={{ latitude: SGT_CENTER.latitude, longitude: SGT_CENTER.longitude }} />
+          {/* Campus area highlight */}
+          <Circle
+            center={SGT_CENTER}
+            radius={300} // ~300 meters around center; adjust as necessary
+            fillColor={'rgba(0,208,132,0.12)'}
+            strokeColor={'rgba(0,208,132,0.4)'}
+          />
+
+          {/* Center pin for SGT University */}
+          <Marker coordinate={{ latitude: SGT_CENTER.latitude, longitude: SGT_CENTER.longitude }} />
         </MapView>
       </View>
 

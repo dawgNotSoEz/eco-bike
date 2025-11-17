@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomTabs from "./BottomTabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import WalletScreen from "../screens/WalletScreen";
@@ -61,8 +62,9 @@ const InnerNavigator: React.FC = () => {
   else if (!user) initialRoute = 'SignIn';
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         {/* Auth/onboarding */}
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
@@ -84,8 +86,9 @@ const InnerNavigator: React.FC = () => {
         <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
         <Stack.Screen name="StationDetails" component={StationDetails} />
         <Stack.Screen name="PaymentGateway" component={PaymentGatewayScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaView>
   );
 };
 

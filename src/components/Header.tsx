@@ -40,12 +40,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   left: {
-    width: 40,
+    width: 56,
     alignItems: "flex-start",
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     resizeMode: 'contain'
   },
   bikeIcon: {

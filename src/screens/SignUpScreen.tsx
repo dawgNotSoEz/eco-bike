@@ -43,7 +43,7 @@ const SignUpScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   inner: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
-  logo: { width: 72, height: 72, marginBottom: 18, resizeMode: 'contain' },
+  logo: { width: 120, height: 120, marginBottom: 24, resizeMode: 'contain' },
   title: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 8 },
   form: { width: '100%', marginTop: 12 },
   input: { backgroundColor: '#0f0f0f', color: '#fff', padding: 14, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: '#00d084' },

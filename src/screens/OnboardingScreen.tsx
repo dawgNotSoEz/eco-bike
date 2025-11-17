@@ -78,8 +78,8 @@ const OnboardingScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topRow: { height: 80, justifyContent: 'center', paddingHorizontal: 20 },
-  logo: { width: 44, height: 44, resizeMode: 'contain' },
+  topRow: { height: 110, justifyContent: 'center', paddingHorizontal: 20 },
+  logo: { width: 88, height: 88, resizeMode: 'contain' },
   page: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   title: { color: '#fff', fontSize: 26, fontWeight: '800', textAlign: 'center' },
   subtitle: { color: '#e6e6e6', fontSize: 16, marginTop: 12, textAlign: 'center', lineHeight: 22 },

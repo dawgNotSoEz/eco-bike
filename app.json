@@ -1,15 +1,29 @@
 {
   "expo": {
-      "name": "Fleet Bikes",
-      "slug": "fleet-bikes",
+    "name": "EcoCycle",
+    "slug": "fleet-bikes",
     "version": "1.0.0",
+    "icon": "./assets/images/Logo.png",
     "platforms": [
       "ios",
       "android",
       "web"
     ],
     "android": {
-      "package": "com.user.doc.savi.ecobike"
+      "package": "com.user.doc.savi.ecobike",
+      "icon": "./assets/images/Logo.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/Logo.png",
+        "backgroundColor": "#0f0f0f"
+      }
+    },
+    "ios": {
+      "icon": "./assets/images/Logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6d231062-7a2c-4de7-aca9-f1e021545001"
+      }
     }
   }
 }
