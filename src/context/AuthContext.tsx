@@ -12,6 +12,7 @@ type AuthContextType = {
   signUp: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   signOut: () => Promise<void>;
   finishOnboarding: () => Promise<void>;
+  guestLogin: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -127,8 +128,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
   };
 
+  const guestLogin = async () => {
+    const guestUser: UserType = {
+      id: 'GUEST_' + Date.now(),
+      studentId: 'GUEST',
+      name: 'Guest User',
+      email: 'guest@ecobike.local',
+      phone: 'N/A',
+      department: 'N/A',
+      year: 'N/A',
+      campus: 'SGT Campus',
+      ridesToday: 0,
+      totalRides: 0,
+      isPremium: false,
+      isVerified: false,
+    };
+    setUser(guestUser);
+    await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(guestUser));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, onboardingComplete, signIn, signUp, signOut, finishOnboarding }}>
+    <AuthContext.Provider value={{ user, loading, onboardingComplete, signIn, signUp, signOut, finishOnboarding, guestLogin }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import React, { useState, useContext } from "react";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from "react-native";
 import Header from "../components/Header";
 import MapSection from "../components/MapSection";
 import WalletCard from "../components/WalletCard";
@@ -17,12 +17,24 @@ import { quickTools } from "../data/quickAccess";
 import { wallet } from "../data/wallet";
 import { ecoStats } from "../data/eco";
 import { currentUser } from "../data/user";
+import { AuthContext } from "../context/AuthContext";
 
 import { useNavigation } from "@react-navigation/native";
 
 export const HomeScreen: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const navigation = useNavigation<any>();
+  const { user, loading } = useContext(AuthContext);
+  
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#00ff77" />
+      </View>
+    );
+  }
+  
+  const displayUser = user || currentUser;
 
   const handleTool = (t: any) => {
     // map tool categories to screens
@@ -37,19 +49,19 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header campus={currentUser.campus} />
+      <Header campus={displayUser.campus} />
 
       <FlatList
         data={stations}
         keyExtractor={(i) => i.id.toString()}
-  renderItem={({ item }) => <StationItem station={item} onPress={() => navigation.navigate("StationDetails" as any, { stationId: item.id })} />}
+        renderItem={({ item }) => <StationItem station={item} onPress={() => navigation.navigate("StationDetails" as any, { stationId: item.id })} />}
         ListHeaderComponent={() => (
           <View style={{ padding: 12 }}>
             <MapSection />
 
             <View style={styles.row}>
               <WalletCard wallet={wallet} onPress={() => navigation.navigate("Wallet" as any)} />
-              <RidesCard ridesToday={currentUser.ridesToday} onPress={() => {}} />
+              <RidesCard ridesToday={displayUser.ridesToday} onPress={() => {}} />
             </View>
 
             <EcoImpactCard eco={ecoStats} onViewAll={() => navigation.navigate('EcoPoints' as any)} />
@@ -69,9 +81,9 @@ export const HomeScreen: React.FC = () => {
         ListFooterComponent={() => <View style={{ height: 120 }} />}
       />
 
-  <FloatingActionButton onPress={() => setModalOpen(true)} />
+      <FloatingActionButton onPress={() => setModalOpen(true)} />
 
-  <QuickAccessModal visible={modalOpen} onClose={() => setModalOpen(false)} tools={quickTools} onToolPress={(t) => { setModalOpen(false); handleTool(t); }} />
+      <QuickAccessModal visible={modalOpen} onClose={() => setModalOpen(false)} tools={quickTools} onToolPress={(t) => { setModalOpen(false); handleTool(t); }} />
     </View>
   );
 };

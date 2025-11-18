@@ -8,7 +8,7 @@ const SignInScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation<any>();
-  const { signIn } = React.useContext(AuthContext);
+  const { signIn, guestLogin } = React.useContext(AuthContext);
 
   const handleSignIn = async () => {
     const res = await signIn(email.trim(), password);
@@ -16,6 +16,11 @@ const SignInScreen: React.FC = () => {
       Alert.alert('Sign in failed', res.message || 'Invalid credentials');
       return;
     }
+    navigation.reset({ index: 0, routes: [{ name: 'Main' as any }] });
+  };
+
+  const handleSkipForNow = async () => {
+    await guestLogin();
     navigation.reset({ index: 0, routes: [{ name: 'Main' as any }] });
   };
 
@@ -31,6 +36,10 @@ const SignInScreen: React.FC = () => {
 
           <TouchableOpacity style={styles.button} onPress={handleSignIn}>
             <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkipForNow}>
+            <Text style={styles.skipButtonText}>Skip for now</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.ghost} onPress={() => navigation.navigate('SignUp' as any)}>
@@ -57,6 +66,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#0f0f0f', color: '#fff', padding: 14, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: '#00d084' },
   button: { backgroundColor: '#00d084', padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 6 },
   buttonText: { color: '#042c22', fontWeight: '800' },
+  skipButton: { backgroundColor: 'transparent', padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#00d084' },
+  skipButtonText: { color: '#00d084', fontWeight: '600' },
   ghost: { marginTop: 12, alignItems: 'center' },
   ghostText: { color: '#e6f7ee' },
 });
