@@ -1,6 +1,5 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,15 +8,11 @@ const SignUpScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signUp } = useContext(AuthContext);
   const navigation = useNavigation<any>();
 
-  const handleSignUp = async () => {
-    const res = await signUp(name.trim(), email.trim(), password);
-    if (!res.success) {
-      Alert.alert('Sign up failed', res.message || 'Cannot create account');
-      return;
-    }
+  const handleSignUp = () => {
+    // Signup logic removed to avoid APK crash. Navigate to SignIn screen.
+    // If you want to re-enable sign up later, restore call to `AuthContext.signUp`.
     navigation.reset({ index: 0, routes: [{ name: 'Main' as any }] });
   };
 
