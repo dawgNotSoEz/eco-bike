@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TransactionItem } from '../components/TransactionItem';
@@ -8,6 +8,43 @@ import { useNavigation } from '@react-navigation/native';
 
 export const WalletScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const [accountBalance, setAccountBalance] = useState(wallet.balance);
+  const [rfidBalance, setRfidBalance] = useState(150.0);
+  const [amount, setAmount] = useState("");
+  const [transactions, setTransactions] = useState(wallet.transactions);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const quickValues = useMemo(() => [100, 250, 500], []);
+
+  const handleRecharge = async () => {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      Alert.alert("Invalid amount", "Enter a positive amount to transfer.");
+      return;
+    }
+    if (numericAmount > accountBalance) {
+      Alert.alert("Insufficient balance", "Not enough wallet funds to load the RFID card.");
+      return;
+    }
+    setIsProcessing(true);
+    setTimeout(() => {
+      setAccountBalance(prev => parseFloat((prev - numericAmount).toFixed(2)));
+      setRfidBalance(prev => parseFloat((prev + numericAmount).toFixed(2)));
+      const now = new Date();
+      const newTransaction = {
+        id: `tx-${now.getTime()}`,
+        type: "topup" as const,
+        description: `RFID recharge • ₹${numericAmount.toFixed(2)}`,
+        amount: -numericAmount,
+        date: "Today",
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setTransactions(prev => [newTransaction, ...prev]);
+      setAmount("");
+      setIsProcessing(false);
+      Alert.alert("Success", "Amount loaded to your RFID card.");
+    }, 900);
+  };
 
   return (
     <View style={styles.container}>
@@ -26,8 +63,19 @@ export const WalletScreen: React.FC = () => {
           colors={['#00d084', '#00a067']}
           style={styles.balanceCard}
         >
-          <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceAmount}>₹{wallet.balance.toFixed(2)}</Text>
+          <Text style={styles.balanceLabel}>Wallet balance</Text>
+          <Text style={styles.balanceAmount}>₹{accountBalance.toFixed(2)}</Text>
+
+          <View style={styles.splitRow}>
+            <View style={[styles.splitCard, { marginRight: 12 }]}>
+              <Text style={styles.splitLabel}>RFID card</Text>
+              <Text style={styles.splitValue}>₹{rfidBalance.toFixed(2)}</Text>
+            </View>
+            <View style={styles.splitCard}>
+              <Text style={styles.splitLabel}>Auto recharge</Text>
+              <Text style={styles.splitValue}>{wallet.autoRechargeEnabled ? "Enabled" : "Disabled"}</Text>
+            </View>
+          </View>
           
           <TouchableOpacity 
             style={styles.addMoneyButton}
@@ -42,6 +90,43 @@ export const WalletScreen: React.FC = () => {
             </View>
           )}
         </LinearGradient>
+
+        {/* Recharge Module */}
+        <View style={styles.transferCard}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Load RFID card</Text>
+              <Text style={styles.sectionSubtitle}>Funds move instantly from wallet to your NFC bike card.</Text>
+            </View>
+            <MaterialCommunityIcons name="credit-card-wireless" size={20} color="#9decc6" />
+          </View>
+
+          <View style={styles.amountRow}>
+            <TextInput
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+              placeholder="Enter amount"
+              placeholderTextColor="#666"
+              style={styles.amountInput}
+            />
+            <TouchableOpacity style={styles.transferButton} onPress={handleRecharge} disabled={isProcessing}>
+              {isProcessing ? (
+                <ActivityIndicator color="#051b12" />
+              ) : (
+                <Text style={styles.transferText}>Transfer</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.quickRow}>
+            {quickValues.map(value => (
+              <TouchableOpacity key={value} style={styles.quickChip} onPress={() => setAmount(value.toString())}>
+                <Text style={styles.quickChipText}>₹{value}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Action Cards */}
         <View style={styles.actionCards}>
@@ -69,7 +154,7 @@ export const WalletScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {wallet.transactions.slice(0, 4).map((transaction) => (
+          {transactions.slice(0, 5).map((transaction) => (
             <TransactionItem key={transaction.id} transaction={transaction} />
           ))}
         </View>
@@ -113,6 +198,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
+  splitRow: {
+    flexDirection: "row",
+    marginBottom: 20,
+  },
+  splitCard: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.15)",
+    padding: 12,
+    borderRadius: 12,
+  },
+  splitLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  splitValue: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
   addMoneyButton: {
     backgroundColor: "rgba(255,255,255,0.2)",
     paddingHorizontal: 20,
@@ -137,6 +242,63 @@ const styles = StyleSheet.create({
   premiumText: {
     color: "#ffffff",
     fontSize: 12,
+    fontWeight: "600",
+  },
+  transferCard: {
+    backgroundColor: "#101010",
+    borderRadius: 18,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  sectionSubtitle: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  amountRow: {
+    flexDirection: "row",
+    marginTop: 16,
+    alignItems: "center",
+  },
+  amountInput: {
+    flex: 1,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    marginRight: 12,
+  },
+  transferButton: {
+    backgroundColor: "#00d084",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  transferText: {
+    color: "#051b12",
+    fontWeight: "800",
+  },
+  quickRow: {
+    flexDirection: "row",
+    marginTop: 14,
+  },
+  quickChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginRight: 10,
+    backgroundColor: "#1a1a1a",
+  },
+  quickChipText: {
+    color: "#9decc6",
     fontWeight: "600",
   },
   actionCards: {

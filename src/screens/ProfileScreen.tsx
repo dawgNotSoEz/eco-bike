@@ -11,6 +11,7 @@ export const ProfileScreen: React.FC = () => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+  const progressPercent = Math.min(100, Math.round((ecoStats.ecoPoints / ecoStats.nextThreshold) * 100));
 
   return (
     <View style={styles.container}>
@@ -43,21 +44,63 @@ export const ProfileScreen: React.FC = () => {
           </View>
         </LinearGradient>
 
-        <View style={{marginHorizontal:20, marginTop:12}}>
-          <TouchableOpacity onPress={() => navigation.navigate('SignIn')} style={{backgroundColor:'#1a1a1a', padding:12, borderRadius:8, alignItems:'center'}}>
-            <Text style={{color:'#fff'}}>Sign Out</Text>
-          </TouchableOpacity>
+        <View style={styles.quickActions}>
+          {[
+            { label: 'Edit Profile', icon: 'account-edit', route: 'SignUp' },
+            { label: 'Wallet', icon: 'wallet', route: 'Wallet' },
+            { label: 'Support', icon: 'lifebuoy', route: 'HelpSupport' },
+          ].map((action) => (
+            <TouchableOpacity
+              key={action.label}
+              style={styles.quickAction}
+              onPress={() => navigation.navigate(action.route as never)}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name={action.icon as any} size={20} color="#00d084" />
+              <Text style={styles.quickActionText}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <View>
+              <Text style={styles.progressTitle}>Eco Progress</Text>
+              <Text style={styles.progressSubtitle}>{ecoStats.level} • {ecoStats.rank}</Text>
+            </View>
+            <Text style={styles.progressMetric}>{ecoStats.ecoPoints} pts</Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          </View>
+          <Text style={styles.progressHint}>
+            {ecoStats.nextThreshold - ecoStats.ecoPoints} pts to {ecoStats.nextLevel}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('SignIn' as never)}
+          style={styles.signOutButton}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: '#00d084' }]}>
-            <Text style={styles.statNumber}>{currentUser.totalRides}</Text>
-            <Text style={styles.statLabel}>Total Rides</Text>
+            <MaterialCommunityIcons name="bike-fast" size={24} color="#0f0f0f" />
+            <View>
+              <Text style={styles.statNumber}>{currentUser.totalRides}</Text>
+              <Text style={styles.statLabel}>Total Rides</Text>
+            </View>
           </View>
           <View style={[styles.statCard, { backgroundColor: '#2196f3' }]}>
-            <Text style={styles.statNumber}>{ecoStats.ecoPoints}</Text>
-            <Text style={styles.statLabel}>Eco Points</Text>
+            <MaterialCommunityIcons name="leaf" size={24} color="#0f0f0f" />
+            <View>
+              <Text style={styles.statNumber}>{ecoStats.ecoPoints}</Text>
+              <Text style={styles.statLabel}>Eco Points</Text>
+            </View>
           </View>
         </View>
 
@@ -94,29 +137,19 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           
-          <View style={styles.activityItem}>
-            <MaterialCommunityIcons name="bike" size={20} color="#00d084" />
-            <View style={styles.activityInfo}>
-              <Text style={styles.activityTitle}>Completed ride (Library to Engineering)</Text>
-              <Text style={styles.activityTime}>2 hours ago</Text>
+          {[
+            { icon: 'bike', color: '#00d084', title: 'Completed ride (Library → Engineering)', time: '2 hours ago' },
+            { icon: 'star', color: '#ffc107', title: 'Earned 50 points', time: '3 hours ago' },
+            { icon: 'trophy', color: '#ff9800', title: 'Joined sustainability challenge', time: '1 day ago' },
+          ].map(activity => (
+            <View key={activity.title} style={styles.activityItem}>
+              <MaterialCommunityIcons name={activity.icon as any} size={20} color={activity.color} />
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>{activity.title}</Text>
+                <Text style={styles.activityTime}>{activity.time}</Text>
+              </View>
             </View>
-          </View>
-
-          <View style={styles.activityItem}>
-            <MaterialCommunityIcons name="star" size={20} color="#ffc107" />
-            <View style={styles.activityInfo}>
-              <Text style={styles.activityTitle}>Earned 50 points</Text>
-              <Text style={styles.activityTime}>3 hours ago</Text>
-            </View>
-          </View>
-
-          <View style={styles.activityItem}>
-            <MaterialCommunityIcons name="trophy" size={20} color="#ff9800" />
-            <View style={styles.activityInfo}>
-              <Text style={styles.activityTitle}>Joined challenge</Text>
-              <Text style={styles.activityTime}>1 day ago</Text>
-            </View>
-          </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -182,6 +215,85 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 12,
+  },
+  quickAction: {
+    flex: 1,
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginHorizontal: 6,
+    alignItems: 'center',
+  },
+  quickActionText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  signOutButton: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: '#262626',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  signOutText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  progressCard: {
+    backgroundColor: '#121212',
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  progressSubtitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  progressMetric: {
+    color: '#00d084',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: '#1f1f1f',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#00d084',
+    borderRadius: 4,
+  },
+  progressHint: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginTop: 8,
+  },
   statsContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
@@ -189,10 +301,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     marginRight: 10,
+    flexDirection: 'row',
     alignItems: "center",
+    justifyContent: 'space-between',
   },
   statNumber: {
     color: "#ffffff",

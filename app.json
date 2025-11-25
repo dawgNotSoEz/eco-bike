@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "user.doc.savi",
     "name": "EcoCycle",
     "slug": "fleet-bikes",
     "version": "1.0.0",
@@ -29,7 +30,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "6d231062-7a2c-4de7-aca9-f1e021545001"
+        "projectId": "1fc40c24-9a38-45ab-a65e-c9d393962de8"
       }
     }
   }

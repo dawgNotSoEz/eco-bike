@@ -1,15 +1,79 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { wallet } from '../data/wallet';
+import { LinearGradient } from "expo-linear-gradient";
 
 export const PaymentGatewayScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const [selectedAmount, setSelectedAmount] = useState(200);
   const [selectedMethod, setSelectedMethod] = useState<string>('upi');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusIndex, setStatusIndex] = useState(-1);
+  const [feedEntries, setFeedEntries] = useState(() => ([
+    { id: 'seed-1', stage: 'RFID sync', detail: '₹200 pushed to card • UPI', timestamp: '09:15 AM' },
+    { id: 'seed-2', stage: 'Wallet credit', detail: '₹350 added via net banking', timestamp: '08:40 AM' },
+  ]));
+  const timeouts = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const amounts = [100, 200, 500, 1000];
+  const liveSteps = [
+    {
+      title: "UPI authorization",
+      subtitle: "Awaiting confirmation from your bank app",
+      icon: "cellphone-check",
+    },
+    {
+      title: "Wallet credit",
+      subtitle: "Funds are moving into Eco Wallet",
+      icon: "wallet-plus",
+    },
+    {
+      title: "RFID sync",
+      subtitle: "Amount pushed to your bike access card",
+      icon: "nfc",
+    },
+  ];
+
+  const pushFeed = (stage: string, detail: string) => {
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setFeedEntries(prev => [
+      { id: `feed-${Date.now()}-${stage}`, stage, detail, timestamp },
+      ...prev,
+    ].slice(0, 6));
+  };
+
+  const startProcessing = () => {
+    if (isProcessing) return;
+    const amountSnapshot = selectedAmount;
+    const methodSnapshot = selectedMethod.toUpperCase();
+    setIsProcessing(true);
+    setStatusIndex(0);
+    pushFeed('Session started', `₹${amountSnapshot} via ${methodSnapshot}`);
+    liveSteps.forEach((_step, idx) => {
+      const timeout = setTimeout(() => {
+        setStatusIndex(idx);
+        const label = liveSteps[idx].title;
+        const detail = idx === liveSteps.length - 1
+          ? `RFID ready • ₹${amountSnapshot}`
+          : liveSteps[idx].subtitle;
+        pushFeed(label, detail);
+        if (idx === liveSteps.length - 1) {
+          setIsProcessing(false);
+          const doneTimeout = setTimeout(() => navigation.goBack(), 700);
+          timeouts.current.push(doneTimeout);
+        }
+      }, idx * 1200);
+      timeouts.current.push(timeout);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      timeouts.current.forEach(clearTimeout);
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -22,6 +86,20 @@ export const PaymentGatewayScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Add Money</Text>
           <View style={{ width: 24 }} />
         </View>
+
+        {/* Hero Summary */}
+        <LinearGradient colors={["#091510", "#010101"]} style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>You’re adding</Text>
+            <Text style={styles.heroAmount}>₹{selectedAmount}</Text>
+          </View>
+          <View style={styles.heroDivider} />
+          <View>
+            <Text style={styles.heroLabel}>Method</Text>
+            <Text style={styles.heroMethod}>{selectedMethod === "upi" ? "UPI" : selectedMethod === "card" ? "Card" : "Net banking"}</Text>
+            <Text style={styles.heroHint}>Wallet → RFID in ~5s</Text>
+          </View>
+        </LinearGradient>
 
         {/* Amount Selection */}
         <View style={styles.section}>
@@ -43,6 +121,57 @@ export const PaymentGatewayScreen: React.FC = () => {
                   ₹{amount}
                 </Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Live Feed */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Live recharge feed</Text>
+            {isProcessing ? (
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>Processing</Text>
+              </View>
+            ) : (
+              <Text style={styles.liveHint}>Idle</Text>
+            )}
+          </View>
+          {liveSteps.map((step, idx) => {
+            const active = statusIndex >= idx;
+            return (
+              <View key={step.title} style={[styles.liveRow, active && styles.liveRowActive]}>
+                <View style={[styles.liveIcon, active && styles.liveIconActive]}>
+                  <MaterialCommunityIcons
+                    name={active ? "check" : (step.icon as any)}
+                    size={18}
+                    color={active ? "#051b12" : "#9decc6"}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.liveTitle, active && styles.liveTitleActive]}>{step.title}</Text>
+                  <Text style={styles.liveSubtitle}>{step.subtitle}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Timeline */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recharge timeline</Text>
+          <View style={styles.feedCard}>
+            {feedEntries.map((entry) => (
+              <View key={entry.id} style={styles.feedRow}>
+                <View style={styles.feedBadge}>
+                  <Text style={styles.feedBadgeText}>{entry.stage}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.feedDetail}>{entry.detail}</Text>
+                  <Text style={styles.feedMeta}>{entry.timestamp}</Text>
+                </View>
+              </View>
             ))}
           </View>
         </View>
@@ -126,13 +255,15 @@ export const PaymentGatewayScreen: React.FC = () => {
       {/* Pay Button */}
       <View style={styles.footer}>
         <TouchableOpacity 
-          style={styles.payButton}
-          onPress={() => {
-            // Handle payment
-            navigation.goBack();
-          }}
+          style={[styles.payButton, isProcessing && { opacity: 0.5 }]}
+          onPress={startProcessing}
+          disabled={isProcessing}
         >
-          <Text style={styles.payButtonText}>Pay ₹{selectedAmount}</Text>
+          {isProcessing ? (
+            <ActivityIndicator color="#04150f" />
+          ) : (
+            <Text style={styles.payButtonText}>Pay ₹{selectedAmount}</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -142,7 +273,7 @@ export const PaymentGatewayScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#0f0f0f",
+    backgroundColor: "#050505",
   },
   header: {
     flexDirection: "row",
@@ -157,15 +288,157 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+  heroCard: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heroLabel: {
+    color: "#9ab5a9",
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  heroAmount: {
+    color: "#ffffff",
+    fontSize: 32,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  heroDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    marginHorizontal: 18,
+  },
+  heroMethod: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  heroHint: {
+    color: "#6f8377",
+    fontSize: 12,
+    marginTop: 4,
+  },
   section: {
     paddingHorizontal: 20,
     marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   sectionTitle: {
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 16,
+  },
+  liveBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,208,132,0.12)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#00d084",
+    marginRight: 6,
+  },
+  liveText: {
+    color: "#00d084",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  liveHint: {
+    color: "#888",
+    fontSize: 12,
+  },
+  liveRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    marginBottom: 10,
+    backgroundColor: "#0f0f0f",
+  },
+  liveRowActive: {
+    borderColor: "rgba(0,208,132,0.4)",
+    backgroundColor: "rgba(0,208,132,0.08)",
+  },
+  liveIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  liveIconActive: {
+    backgroundColor: "#00d084",
+    borderColor: "#00d084",
+  },
+  liveTitle: {
+    color: "#9ab5a9",
+    fontWeight: "600",
+  },
+  liveTitleActive: {
+    color: "#051b12",
+  },
+  liveSubtitle: {
+    color: "#8c8c8c",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  feedCard: {
+    backgroundColor: "#0b0b0b",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  feedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  feedBadge: {
+    borderRadius: 8,
+    backgroundColor: "rgba(0,208,132,0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 12,
+  },
+  feedBadgeText: {
+    color: "#00d084",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  feedDetail: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  feedMeta: {
+    color: "#9a9a9a",
+    fontSize: 12,
+    marginTop: 2,
   },
   amountGrid: {
     flexDirection: "row",
